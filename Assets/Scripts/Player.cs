@@ -104,12 +104,6 @@ public class Player : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
                     state = GameState.Intro;
-                    footstepsSource.Play();
-                }
-
-                if (Input.GetKeyUp(KeyCode.Space))
-                {
-                    footstepsSource.Stop();
                 }
                 break;
 
@@ -177,11 +171,13 @@ public class Player : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
                     isMoving = true;
+                    footstepsSource.Play();
                 }
 
                 if (Input.GetKeyUp(KeyCode.Space))
                 {
                     isMoving = false;
+                    footstepsSource.Stop();
                 }
 
                 break;
@@ -192,6 +188,7 @@ public class Player : MonoBehaviour
                         AudioManager.instance.PlaySound(sound);
                     foreach (var ambienceObject in ambienceObjects)
                         ambienceObject.SetActive(false);
+                    footstepsSource.Stop();
                 }
                 if (timeInLoseScreen > timeWhenLoseMusicStarts)
                 {
@@ -206,6 +203,7 @@ public class Player : MonoBehaviour
                     AudioManager.instance.PlayMusic(introClip);
                     foreach (var ambienceObject in ambienceObjects)
                         ambienceObject.SetActive(false);
+                    footstepsSource.Stop();
                 }
                 break;
         }
