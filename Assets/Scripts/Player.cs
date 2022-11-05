@@ -13,15 +13,17 @@ public enum GameState
 public class Player : MonoBehaviour
 {
 
-    [Header("Intro Settings")]
-    [SerializeField, Range(1f, 30f)]
-    public float introScreenTime = 3f;
-    public AudioClip introClip;
+    [Header("Sequences")]
+    public GameObject introSequence;
+    public GameObject gameSequence;
+    public GameObject lostSequence;
+    public GameObject wonSequence;
+    public AudioClip bgMusic;
 
     [Header("Game Settings")]
-    public List<GameObject> ambienceObjects;
     public AudioSource footstepsSource;
-    [SerializeField, Range(1f, 10f)]
+    public AudioClip swipeIn, swipeOut;
+    [SerializeField, Range(0.1f, 10f)]
     public float deathTime = 1f;
     [SerializeField, Range(1f, 10f)]
     public float breakTime = 5f;
@@ -29,25 +31,11 @@ public class Player : MonoBehaviour
     public float airborneTime = 3f;
     public Vector3 movement;
 
-    [Header("Game Over Settings")]
-    public List<string> loseSounds;
-    public List<string> winSounds;
-    public float timeWhenLoseMusicStarts = 7f;
-    [SerializeField, Range(1f, 30f)]
-    public float loseScreenTime = 3f;
-
-    private Dictionary<string, GameObject> currentSounds = new Dictionary<string, GameObject>();
-    private List<AudioClip> clipList = new List<AudioClip>();
-
-    // Private
-    private GameState previousState = GameState.Intro;
     private GameState state = GameState.Intro;
 
     private float timeUntilNextShot = 0f;
     private float timeInAir = 0f;
     private float timeThatKills = 0f;
-    private float timeInLoseScreen = 0f;
-    private float timeInIntroScreen = 0f;
 
     private bool isAirborne = false;
     private bool isDying = false;
@@ -59,7 +47,7 @@ public class Player : MonoBehaviour
     {
         if (other.CompareTag("Goal"))
         {
-            state = GameState.Won;
+            SetStateToWon();
         }
     }
 
@@ -71,33 +59,53 @@ public class Player : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Start()
     {
-        // deciding which state to go to
+        SetStateToIntro();
+        timeUntilNextShot = breakTime;
+    }
+
+    private void CheckInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            SetStateToIntro();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            SetStateToGame();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            SetStateToLost();
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            SetStateToWon();
+        }
+
         switch (state)
         {
             case GameState.Intro:
-                timeInIntroScreen += Time.deltaTime;
-                if (timeInIntroScreen > introScreenTime)
-                    state = GameState.Game;
                 break;
 
             case GameState.Game:
-                if (isMoving && isDying)
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
                     isMoving = false;
-                    state = GameState.Lost;
+                    footstepsSource.Stop();
+                    AudioManager.instance.PlaySound(swipeIn);
+                }
+
+                if (Input.GetKeyUp(KeyCode.Space))
+                {
+                    isMoving = true;
+                    footstepsSource.Play();
+                    AudioManager.instance.PlaySound(swipeOut);
                 }
                 break;
 
             case GameState.Lost:
-                timeInLoseScreen += Time.deltaTime;
-
-                if (timeInLoseScreen > loseScreenTime)
-                {
-                    state = GameState.Intro;
-                }
-
                 break;
 
             case GameState.Won:
@@ -106,32 +114,23 @@ public class Player : MonoBehaviour
                     state = GameState.Intro;
                 }
                 break;
-
         }
+    }
 
-        // updating the current state
+    private void Update()
+    {
+        CheckInput();
+
         switch (state)
         {
             case GameState.Intro:
-                if(previousState != state)
-                {
-                    AudioManager.instance.PlaySound("sfx_trailer_drum");
-                }
-                AudioManager.instance.PlayMusic(introClip);
                 break;
 
             case GameState.Game:
-                if (previousState != state)
+                timeUntilNextShot -= Time.deltaTime;
+                if (timeUntilNextShot <= 0f)
                 {
-                    AudioManager.instance.StopMusic();
-
-                    foreach (var ambienceObject in ambienceObjects)
-                        ambienceObject.SetActive(true);
-                }
-                timeUntilNextShot += Time.deltaTime;
-                if (timeUntilNextShot > breakTime)
-                {
-                    timeUntilNextShot = 0f;
+                    timeUntilNextShot = breakTime;
                     isAirborne = true;
                 }
 
@@ -168,52 +167,67 @@ public class Player : MonoBehaviour
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.Space))
-                {
-                    isMoving = true;
-                    footstepsSource.Play();
-                }
-
-                if (Input.GetKeyUp(KeyCode.Space))
+                if (isMoving && isDying)
                 {
                     isMoving = false;
-                    footstepsSource.Stop();
+                    SetStateToLost();
                 }
+
 
                 break;
             case GameState.Lost:
-                if(previousState != state)
-                {
-                    foreach (var sound in loseSounds)
-                        AudioManager.instance.PlaySound(sound);
-                    foreach (var ambienceObject in ambienceObjects)
-                        ambienceObject.SetActive(false);
-                    footstepsSource.Stop();
-                }
-                if (timeInLoseScreen > timeWhenLoseMusicStarts)
-                {
-                    AudioManager.instance.PlayMusic(introClip);
-                }
                 break;
             case GameState.Won:
-                if (previousState != state)
-                {
-                    foreach (var sound in winSounds)
-                        AudioManager.instance.PlaySound(sound);
-                    AudioManager.instance.PlayMusic(introClip);
-                    foreach (var ambienceObject in ambienceObjects)
-                        ambienceObject.SetActive(false);
-                    footstepsSource.Stop();
-                }
                 break;
         }
-
-        previousState = state;
     }
 
-    public IEnumerator RemoveFromClipList(AudioClip audioClip, float t)
+    public void SetStateToIntro()
     {
-        yield return new WaitForSeconds(t);
-        clipList.Remove(audioClip);
+        state = GameState.Intro;
+
+        introSequence.SetActive(true);
+        gameSequence.SetActive(false);
+        lostSequence.SetActive(false);
+        wonSequence.SetActive(false);
+    }
+
+    public void SetStateToGame()
+    {
+        state = GameState.Game;
+        isMoving = true;
+        isDying = false;
+        AudioManager.instance.StopMusic();
+
+        transform.position = Vector3.zero;
+        footstepsSource.Play();
+
+        introSequence.SetActive(false);
+        gameSequence.SetActive(true);
+        lostSequence.SetActive(false);
+        wonSequence.SetActive(false);
+    }
+    public void SetStateToLost()
+    {
+        state = GameState.Lost;
+        isMoving = false;
+        footstepsSource.Stop();
+
+        introSequence.SetActive(false);
+        gameSequence.SetActive(false);
+        lostSequence.SetActive(true);
+        wonSequence.SetActive(false);
+    }
+
+    public void SetStateToWon()
+    {
+        state = GameState.Won;
+        isMoving = false;
+        footstepsSource.Stop();
+
+        introSequence.SetActive(false);
+        gameSequence.SetActive(false);
+        lostSequence.SetActive(false);
+        wonSequence.SetActive(true);
     }
 }

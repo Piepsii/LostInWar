@@ -7,10 +7,9 @@ using UnityEngine.Audio;
 public class AudioManager : MonoBehaviour
 {
     private SoundEffect[] soundEffects;
-    private AudioSource[] audioSources;
-    private AudioSource soundSource;
-    private AudioSource musicSource;
-    private AudioSource ambienceSource;
+    public AudioSource soundSource;
+    public AudioSource musicSource;
+    public AudioSource ambienceSource;
 
     public AudioMixer audioMixer;
 
@@ -37,10 +36,6 @@ public class AudioManager : MonoBehaviour
 
     private void Awake()
     {
-        audioSources = GetComponents<AudioSource>();
-        soundSource = audioSources[0];
-        musicSource = audioSources[1];
-        ambienceSource = audioSources[2];
         instance = this;
     }
 

@@ -22,8 +22,8 @@ public class AmbienceController : MonoBehaviour
     {
         audioManager = AudioManager.instance;
         audioManager.PlayAmbience(ambience);
-        timeToNextAccent = timeBetweenAccents;
         rotationSpeed = 0.01f;
+        PlayAccent();
     }
 
     private void Update()
@@ -45,11 +45,16 @@ public class AmbienceController : MonoBehaviour
         timeToNextAccent -= Time.deltaTime;
         if (timeToNextAccent <= 0f)
         {
-            int randomIndex = Random.Range(0, accents.Length);
-            var randomAccent = accents[randomIndex];
-            audioManager.PlayAmbience(randomAccent, accentSource);
-            timeToNextAccent = timeBetweenAccents + Random.Range(-timeVariance, timeVariance);
+            PlayAccent();
         }
 
+    }
+
+    private void PlayAccent()
+    {
+        int randomIndex = Random.Range(0, accents.Length);
+        var randomAccent = accents[randomIndex];
+        audioManager.PlayAmbience(randomAccent, accentSource);
+        timeToNextAccent = timeBetweenAccents + Random.Range(-timeVariance, timeVariance);
     }
 }
