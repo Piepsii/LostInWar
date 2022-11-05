@@ -90,14 +90,14 @@ public class Player : MonoBehaviour
                 break;
 
             case GameState.Game:
-                if (Input.GetKeyDown(KeyCode.Space))
+                if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
                 {
                     isMoving = false;
                     footstepsSource.Stop();
                     AudioManager.instance.PlaySound(swipeIn);
                 }
 
-                if (Input.GetKeyUp(KeyCode.Space))
+                if (Input.GetKeyUp(KeyCode.Space) || Input.GetMouseButtonUp(0))
                 {
                     isMoving = true;
                     footstepsSource.Play();
